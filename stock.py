@@ -37,40 +37,56 @@ for i in stk_info_df.index:
         #input('pause:')
         intersect_columns = [x for x in info_columns if x in columns_included]
         stk_info_df.loc[i,intersect_columns] = list(pd.Series(info_dict)[intersect_columns].values)
-        currPrice = stk_info_df.loc[i,"currentPrice"]
-        print('current price')
-        print(currPrice)
-        targPrice = stk_info_df.loc[i,"targetMeanPrice"]
-        #In this part you have to implement your formula to get the score of a ticker
-        score = (targPrice - currPrice)/currPrice
-        print('initial score: ')
-        print(score)
-        if eco_score > 0:
-            if score > eco_score:
-                score = 0.5*score+0.5*eco_score
-        else:
-            score = 0.8*score+0.2*eco_score
-        print('adjusted score 1: ')
-        print(score)
-        earningsGrowth = stk_info_df.loc[i,"earningsGrowth"]
-        revenueGrowth = stk_info_df.loc[i,"revenueGrowth"]
-        if earningsGrowth<0.1 and revenueGrowth<0.1 and score > 0:
-            score = 0.8*score
-        if earningsGrowth>0.1 and revenueGrowth>0.1 and score < 0:
-            score = 0
-        print('adjusted score 2: ')
-        print(score)
-        stk_suggest.loc[i,"score"] = score
         #earning = stock.quarterly_earnings.tail(5)
         #stock.quarterly_financials
         #stock.quarterly_cashflow
         time.sleep(2)
     except:
         failed_list.append(i)
-        
+######
+#stock god core algo
+######   
+#fill zero for empty slots
+stk_info_df = stk_info_df.fillna(0)
+no_predict_list = []
+for i in stk_info_df.index:
+    try:
+        currPrice = stk_info_df.loc[i,"currentPrice"]
+        print('current price')
+        print(currPrice)
+        targPrice = stk_info_df.loc[i,"targetMeanPrice"]
+        score = 0
+        #In this part you have to implement your formula to get the score of a ticker
+        if targPrice != 0:
+            score = (targPrice - currPrice)/currPrice
+            print('initial score: ')
+            print(score)
+            if eco_score > 0:
+                if score > eco_score:
+                    score = 0.5*score+0.5*eco_score
+            else:
+                score = 0.8*score+0.2*eco_score
+            print('adjusted score 1: ')
+            print(score)
+        earningsGrowth = stk_info_df.loc[i,"earningsGrowth"]
+        revenueGrowth = stk_info_df.loc[i,"revenueGrowth"]
+        if earningsGrowth != 0 and revenueGrowth!= 0:
+            if earningsGrowth<0.1 and revenueGrowth<0.1 and score > 0:
+                score = 0.8*score
+            if earningsGrowth>0.1 and revenueGrowth>0.1 and score < 0:
+                score = 0
+            print('adjusted score 2: ')
+            print(score)
+        stk_suggest.loc[i,"score"] = score
+    except:
+        stk_suggest.loc[i,"score"] = -100
+        no_predict_list.append(i)
+
 stk_info_df.to_csv('out.csv')
 stk_suggest.to_csv('score.csv')
-print('failed list:')
+print('failed to fetch stock data list:')
 print(failed_list)
+print('no predict result list:')
+print(no_predict_list)
 
 
